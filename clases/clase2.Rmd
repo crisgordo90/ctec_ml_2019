@@ -1,0 +1,72 @@
+---
+title: "clase2"
+author: "Cristopher Chacon"
+date: "7/27/2019"
+output: html_document
+---
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = T)
+library(readr)
+library(dplyr)
+library(GGally)
+library(visdat)
+```
+
+## Análisis del dataset
+
+Lea el dataset con la función read.csv y guardelo en una variable
+```{r}
+casas <- read.csv('kc_house_data.csv', header = T)
+ggpairs(casas[3:21])
+vis_dat(airquality)
+```
+
+## Outliers
+Divide los datos en cuartiles y deja en el centro la mediana, para determinar los outliers
+```{r}
+boxplot(casas$price)
+```
+
+## Transformaciones
+```{r}
+hist(casas$price)
+
+qqnorm(casas$price)
+
+qqline(casas$price)
+
+# Para cada punto calcula la probabilidad de que un dato caiga en x punto (si el eje x en el plano)
+densidad <- (casas$price)
+plot(densidad)
+
+
+# Esto se usa para normalizar los datos, porque se requieren para ciertos analisis
+hist(log(casas$price))
+hist(log10(casas$price))
+
+# qqplot
+
+
+# Regresiones
+# Si los datos son heterocedasticos no se puede hacer una relacion lineal, ejemplo datos agrupados al inicio y dispersos al final.
+# Es decir los datos deben ser homocedasticos
+```
+
+
+
+### 3. Reduccion de datos
+# Muestro o agrupacion (clustering) 
+# Con analisis de componentes principales (El PCA funciona con datos continuos, no con datos nominales)
+# 
+
+
+## zscores
+# Se usa cuando en los features hay muchos valores extremos es decir cuando los datos son muy divergentes
+# No se conoce el maximo o minimo
+# Debe de ser continuo
+# 
+```{r}
+
+```
+
+
