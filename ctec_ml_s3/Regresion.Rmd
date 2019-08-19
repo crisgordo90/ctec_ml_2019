@@ -35,14 +35,26 @@ Con el fin de analizar y tratar de estimar las millas por galón de diferentes m
 1. Cargue el archivo auto-mpg_g.csv en una variable
 
 ```{r}
-# Escriba su código aqui
+library(GGally)
+library(ggplot2)
+library(visdat)
+library(caTools)
+library(lessR)
+library(bestNormalize)
+library(mltools)
+
+autos <- read.csv('auto-mpg_g.csv', header = T, na.strings = '?')
 ```
 
 2. Utilizando Ggpairs cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
-
 ```{r}
-# Escriba su código aqui
+vis_miss(autos) # No hay datos faltantes
+vis_dat(autos)
+
+autos <- autos[,1:8]
+ggpairs(autos, columns = 1:8)
 ```
+
 
 3. Separe los datos en 2 conjuntos, uno de entrenamiento y otro de pruebas. Normalmente se trabaja utilizando un 70-80% de los datos para entrenamiento y el resto para pruebas.
 
@@ -50,7 +62,10 @@ Recuerde fijar una semilla para que el documento sea reproducible.
 
 Pista: https://www.rdocumentation.org/packages/caTools/versions/1.17.1/topics/sample.split
 ```{r}
-# Escriba su código aqui
+autos
+result <- sample.split(autos, SplitRatio = .7)
+autos.train <- autos[result==TRUE, ]
+autos.test <- autos[result==FALSE, ]
 ```
 
 4. Cree un modelo de regresion lineal utilizando el atributo mpg como la variable objetivo y en base a las correlaciones observadas en el gráfico del punto 2 escoja al menos dos atributos para usarlos como variables predictoras para el modelo.
@@ -60,15 +75,53 @@ Pista: https://www.rdocumentation.org/packages/lessR/versions/1.9.8/topics/reg
 Nota: Al crear el modelo utilice el conjunto de datos de entrenamiento definido en el punto 3.
 
 ```{r}
-# Escriba su código aqui
+#hist(log10(autos.train$disp))
+#hist(log(autos.train$disp))
+#hist(sqrt(autos.train$disp))
+#hist(orderNorm(autos.train$disp)$x.t) # Ordered Quantile Normalization
+hist(autos.train$disp)
+autos.train$disp <- orderNorm(autos.train$disp)$x.t
+hist(autos.train$disp)
+
+
+#hist(log10(autos.train$weight))
+#hist(log(autos.train$weight))
+#hist(sqrt(autos.train$weight))
+#hist(orderNorm(autos.train$weight)$x.t) # Ordered Quantile Normalization
+hist(autos.train$weight)
+autos.train$weight <- orderNorm(autos.train$weight)$x.t
+hist(autos.train$weight)
+
+
+#hist(log10(autos.train$mpg))
+#hist(log(autos.train$mpg))
+#hist(sqrt(autos.train$mpg))
+#hist(orderNorm(autos.train$mpg)$x.t) # Ordered Quantile Normalization
+hist(autos.train$mpg)
+autos.train$mpg <- log10(autos.train$mpg)
+hist(autos.train$mpg)
+
+
+autos.test$disp <- orderNorm(autos.test$disp)$x.t
+autos.test$weight <- orderNorm(autos.test$weight)$x.t
+autos.test$mpg <- log10(autos.test$mpg)
 ```
+
+```{r}
+# reg <- lessR::reg(mpg ~ disp + weight, data=autos.train)
+reg <- lm(formula = mpg ~ disp + weight, data = autos.train) # https://github.com/cran/lessR/blob/master/NEWS # Regression
+```
+
 
 5. Realice predicciones utilizando el conjunto de pruebas y evalue el resultado con la métrica MSE.
 
 Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
 ```{r}
 library(Metrics)
-# Escriba su código aqui
+prediccion <- predict(reg, autos.test)
+prediccion[1]
+autos.test$mpg[1]
+mltools::mse(preds = prediccion, actuals=autos.test$mpg)
 ```
 
 6. Opcional

@@ -67,7 +67,9 @@ Como podemos observar la columna bathrooms posee valores inconsistentes ya que n
 Modifique la columna bathrooms para que solo posea valores enteros
 
 ```{r}
-# Escriba su código aqui
+casas_bathrooms <- casas$bathrooms
+casas$bathrooms <- floor(casas$bathrooms)
+casas$bathrooms
 ```
 
 ### 2. Llevar los datos a distribución normal.
@@ -78,9 +80,9 @@ Modifique la columna price del dataset de precios de casas para que siga una dis
 # Precios antes de la modificación
 hist(casas$price)
 # Escriba su codigo aqui
-# ...
+hist(log10(casas$price))
+hist(log(casas$price))
 # Precios normalmente distribuidos
-hist(casas$price)
 ```
 
 Note que ahora los precios ya no se agrupan a la izquierda.
@@ -92,7 +94,9 @@ Reemplace los valores faltantes de la columna sqft_living con la mediana de los 
 Nota: este dataset no posee valores faltantes pero para efectos del ejercicio esto no nos afecta ya que el código sería igual.
 
 ```{r}
-# Escriba su código aqui
+casas_sqft_living <- casas$sqft_living
+casas$sqft_living[is.na(casas$sqft_living)] <- median(casas$sqft_living)
+casas$sqft_living
 ```
 
 
@@ -113,7 +117,9 @@ feature_scaling <- function(x) {
 2. Compare el resultado con la función `scale()`
 
 ```{r}
-# Escriba su código aqui
+hist(feature_scaling(casas$sqft_lot))
+hist(scale(casas$sqft_lot))
+# En el primer histograma podemos ver como los datos se agrupan de mayormente en 0, mientras que en el segundo si bien hay una tendencia a -1 todavia hay otros datos relevantes en 0.
 ```
 
 ### 5. Normalización con la función z-score
@@ -128,13 +134,12 @@ Pista: utilice las funciones `mean`, `sd`
 # Datos antes de la transformación
 hist(casas$bathrooms)
 # Escriba su código aqui
-# ...
+z_score <- function(x) {
+  return ((x - mean(x)) / sd(x))
+}
+zscore <- z_score(casas$bathrooms)
 # Después de la transformación
-hist(casas$bathrooms)
+hist(zscore)
 ```
 
 Note que ahora la media de los datos se acerca a 0
-
-
-
-
