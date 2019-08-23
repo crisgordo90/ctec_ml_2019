@@ -15,12 +15,30 @@ knitr::opts_chunk$set(echo = TRUE)
 Librerias
 ```{r}
 library('ggplot2')
+library('dplyr')
+library('GGally')
+library('reshape2')
+library('corrr')
 ```
 
 1. Desarolle el Análisis del Problema
-```{r}
-# Construya el análisis del problema
-```
+
+Nos brindan informacion con respecto gasto anual en diferentes tipos de producto, por distintos canales y regiones. Vamos a realizar una exploracion de los datos para analizar que implicaciones tienen los mismos y determinar si hay correlaciones importantes, si existen grupos o cuales grupos existen y proveer informacion valiosa a los interesados.
+
+Informacion de los atributos
+
+m.u.: Moneda
+
+1.	FRESH: Gasto anual (m.u.) en productos frescos 
+2.	MILK: Gasto anual (m.u.) en productos lacteos
+3.	GROCERY: Gasto anual (m.u.) en productos abarrotes
+4.	FROZEN: Gasto anual (m.u.) en productos congelados
+5.	DETERGENTS_PAPER: Gasto anual (m.u.) en productos de baño
+6.	DELICATESSEN: Gasto anual (m.u.) en productos embutidos
+7.	CHANNEL: Canal - Horeca (Hotel/Restaurant/Cafe) o Retail
+8.	REGION: Region - Lisboa, Oporto o Otros
+
+
 Fuente del dataset:
 https://archive.ics.uci.edu/ml/datasets/Wholesale+customers
 
@@ -28,34 +46,49 @@ https://archive.ics.uci.edu/ml/datasets/Wholesale+customers
 2. Cargue el archivo Wholesale customers data.csv en una variable
 
 ```{r}
-# Escriba su código aqui
+data <- read.csv('wholesale.csv', header = T, na.strings = '?')
 ```
 
 3. Desarolle el Entendimiento de los Datos
 
 ```{r}
-# Escriba su código aqui
+glimpse(data)
+
+table(data$Channel)
+table(data$Region)
+
+
+# Debido al tipo de datos que representa estos atributos deben ser valores
+data$Channel <- factor(data$Channel)
+data$Region <- factor(data$Region)
+
+summary(data)
 ```
 
 4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
 
 ```{r}
-# Escriba su código aqui
+barplot(table(data$Region), col=c("cornflowerblue", "blue","darkblue"), space=F, ylab="Frequency")
+barplot(table(data$Channel), col=c("cornflowerblue", "blue"), space=F, ylab="Frequency")
+
+ggpairs(data)
+data[3:8] %>% correlate() %>% network_plot()
 ```
 
 5. Explique el siguiente gráfico
 
 ```{r}
 #Grafico
-#bxplt <- ggplot(data = melt(Wholesale), aes(x= variable, y = value))
-#bxplt <- bxplt + geom_boxplot()
-#bxplt <- bxplt + facet_wrap(~Channel)
-#bxplt <- bxplt + coord_flip()
-#bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
-#bxplt <- bxplt + ggtitle('Ventas por producto y por canal')
-#bxplt
+bxplt <- ggplot(data = melt(data), aes(x= variable, y = value))
+bxplt <- bxplt + geom_boxplot()
+bxplt <- bxplt + facet_wrap(~Channel)
+bxplt <- bxplt + coord_flip()
+bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
+bxplt <- bxplt + ggtitle('Ventas por producto y por canal')
+bxplt
 
-# Escriba su código aqui
+# Respuesta
+# Podemos ver en los box plots o whisker plots de los productos para el canal 1 (horeca) y 2 (retail), en ambos canales vemos gastos altos atipicos en todos los productos, en el caso de HoReCa los gastos son un mayoria productos frescos, seguidos de productos congelados y lacteos, en el caso de Retail son los productos de abarrote, seguidos de lacteos y productos frescos, con un gasto considerable en productos de baño.
 ```
 
 6. Cree un modelo de agrupación K- Means
@@ -63,42 +96,169 @@ Para agrupar a los clientes con base al consumo, vamos a utilizar solo las varia
 
 
 ```{r}
-# Escriba su código aqui
-
-#5 Centroides utilizando k-means
-#modelo.agrupacion <- kmeans(Wholesale[,c(3:8)], centers = 5)
+# Cinco Centroides utilizando k-means
+modelo.agrupacion <- kmeans(data[,c(3:8)], centers = 5)
 
 #predecir utilizando el modelo para agregar una variable nueva llamada 'cluster' al conjunto de datos
-#Wholesale$cluster <- modelo.agrupacion$cluster
+data$cluster <- modelo.agrupacion$cluster
 
 #convertir la variable nueva a un factor
-#Wholesale$cluster <- factor(Wholesale$cluster)
+data$cluster <- factor(data$cluster)
 
 ```
 
 6. Realice al menos 3 modelos cambiando los centroides 
 ```{r}
-# Escriba su código aqui
+# Cuatro Centroides utilizando k-means
+data$cluster4 <- kmeans(data[,c(3:8)], centers = 4)$cluster
+data$cluster4 <- factor(data$cluster)
+
+# Tres Centroides utilizando k-means
+data$cluster3  <- kmeans(data[,c(3:8)], centers = 3)$cluster
+data$cluster3 <- factor(data$cluster)
+
+# Dos Centroides utilizando k-means
+data$cluster2 <- kmeans(data[,c(3:8)], centers = 2)$cluster
+data$cluster2 <- factor(data$cluster)
 ```
 
-7. Evaluacioón del modelo
+
+
+7. Evaluación del modelo
 ```{r}
-# Escriba su código aqui
 #Explicacion de los grupos generados
-#by(Wholesale, Wholesale$cluster, summary)
+by(data, data$cluster, summary)
 ```
 
 
 8. Desarolle al menos 5 conclusiones sobre los grupos realizados
-  * Ejemplo:
-    - Las principales características de cada grupo son:
-      - #### Grupo #1: (2do grupo más pequeño)
-      - Principalmente observaciones de la región 3 y el canal 1.
-      - Muy alto consumo de productos frescos.
-      - Bajo consumo de leche.
-      - Bajo consumo de comestibles.
-      - Alto consumo de alimentos congelados.
-      - Bajo consumo de detergentes.
-      - Bajo consumo de delicassen.
 
+## Resultados:
+## Nota: Se adjuntan los resultados porque parecen variar en orden
+data$cluster: 1
+ Channel Region     Fresh             Milk          Grocery          Frozen      Detergents_Paper   Delicassen    
+ 1:21    1: 3   Min.   : 32717   Min.   :  286   Min.   :  471   Min.   :  532   Min.   :  20.0   Min.   :    3.0
+ 2: 2    2: 1   1st Qu.: 39454   1st Qu.: 1871   1st Qu.: 2366   1st Qu.: 1553   1st Qu.: 311.0   1st Qu.:  870.5
+         3:19   Median : 43088   Median : 3504   Median : 4252   Median : 4802   Median : 751.0   Median : 1819.0
+                Mean   : 49296   Mean   : 4984   Mean   : 5590   Mean   : 8286   Mean   : 962.3   Mean   : 2543.7
+                3rd Qu.: 54644   3rd Qu.: 4761   3rd Qu.: 7726   3rd Qu.: 8030   3rd Qu.:1189.5   3rd Qu.: 2452.0
+                Max.   :112151   Max.   :29627   Max.   :18148   Max.   :60869   Max.   :4948.0   Max.   :14351.0
 
+cluster cluster4 cluster3 cluster2
+1:23    1:23     1:23     1:23    
+2: 0    2: 0     2: 0     2: 0    
+3: 0    3: 0     3: 0     3: 0    
+4: 0    4: 0     4: 0     4: 0    
+5: 0    5: 0     5: 0     5: 0    
+------------------------------------------------------------------------------------------------------ 
+data$cluster: 2
+ Channel Region     Fresh            Milk          Grocery          Frozen      Detergents_Paper   Delicassen   
+ 1:81    1:18   Min.   :11314   Min.   :  134   Min.   :    3   Min.   :  118   Min.   :   3.0   Min.   :   57.0
+ 2:21    2:11   1st Qu.:17202   1st Qu.: 1497   1st Qu.: 2078   1st Qu.: 1061   1st Qu.: 244.5   1st Qu.:  623.2
+         3:73   Median :19981   Median : 3078   Median : 3822   Median : 2548   Median : 499.5   Median : 1160.5
+                Mean   :21338   Mean   : 3934   Mean   : 5176   Mean   : 4183   Mean   :1138.1   Mean   : 1713.0
+                3rd Qu.:25169   3rd Qu.: 5319   3rd Qu.: 7278   3rd Qu.: 5274   3rd Qu.:1435.8   3rd Qu.: 2306.8
+                Max.   :34454   Max.   :16687   Max.   :21042   Max.   :35009   Max.   :6707.0   Max.   :14472.0
+
+cluster cluster4 cluster3 cluster2
+1:  0   1:  0    1:  0    1:  0   
+2:102   2:102    2:102    2:102   
+3:  0   3:  0    3:  0    3:  0   
+4:  0   4:  0    4:  0    4:  0   
+5:  0   5:  0    5:  0    5:  0   
+------------------------------------------------------------------------------------------------------ 
+data$cluster: 3
+ Channel Region     Fresh            Milk          Grocery          Frozen        Detergents_Paper   Delicassen 
+ 1:1     1:1    Min.   :   85   Min.   : 4980   Min.   :20170   Min.   :   36.0   Min.   :  239    Min.   :  903 
+ 2:9     2:1    1st Qu.: 9928   1st Qu.:27686   1st Qu.:32054   1st Qu.:  996.8   1st Qu.:19032    1st Qu.: 1572
+         3:8    Median :19521   Median :37396   Median :42761   Median : 3243.0   Median :22121    Median : 2907
+                Mean   :21264   Mean   :37443   Mean   :46711   Mean   : 6287.2   Mean   :21699    Mean   : 8743
+                3rd Qu.:33550   3rd Qu.:45635   3rd Qu.:58591   3rd Qu.: 5049.5   3rd Qu.:26084    3rd Qu.: 6131
+                Max.   :44466   Max.   :73498   Max.   :92780   Max.   :36534.0   Max.   :40827    Max.   :47943
+
+cluster cluster4 cluster3 cluster2
+1: 0    1: 0    1: 0     1: 0    
+2: 0    2: 0    2: 0     2: 0    
+3:10    3:10    3:10     3:10    
+4: 0    4: 0    4: 0     4: 0    
+5: 0    5: 0    5: 0     5: 0
+------------------------------------------------------------------------------------------------------ 
+data$cluster: 4
+ Channel Region      Fresh            Milk          Grocery          Frozen        Detergents_Paper   Delicassen  
+ 1:188   1: 41   Min.   :    3   Min.   :   55   Min.   :  137   Min.   :   47.0   Min.   :   3.0   Min.   :   3.0
+ 2: 38   2: 23   1st Qu.: 2624   1st Qu.: 1114   1st Qu.: 1766   1st Qu.:  637.2   1st Qu.: 206.8   1st Qu.: 319.2
+         3:162   Median : 5996   Median : 2362   Median : 3027   Median : 1332.5   Median : 480.0   Median : 687.5
+                 Mean   : 6144   Mean   : 3277   Mean   : 4115   Mean   : 2438.3   Mean   :1220.7   Mean   : 992.5
+                 3rd Qu.: 9406   3rd Qu.: 4887   3rd Qu.: 6110   3rd Qu.: 2869.5   3rd Qu.:1679.8   3rd Qu.:1368.2
+                 Max.   :14276   Max.   :18664   Max.   :12822   Max.   :17866.0   Max.   :7271.0   Max.   :7844.0
+
+cluster cluster4 cluster3 cluster2
+1:  0   1:  0    1:  0    1:  0   
+2:  0   2:  0    2:  0    2:  0   
+3:  0   3:  0    3:  0    3:  0   
+4:226   4:226    4:226    4:226   
+5:  0   5:  0    5:  0    5:  0   
+------------------------------------------------------------------------------------------------------ 
+data$cluster: 5
+ Channel Region     Fresh            Milk          Grocery          Frozen        Detergents_Paper   Delicassen  
+ 1: 7    1:14   Min.   :   18   Min.   : 1275   Min.   : 8852   Min.   :   25.0   Min.   :  241    Min.   :   3.0
+ 2:72    2:11   1st Qu.: 1090   1st Qu.: 7742   1st Qu.:13498   1st Qu.:  417.5   1st Qu.: 5967    1st Qu.: 609.5
+         3:54   Median : 3136   Median :10765   Median :16709   Median :  959.0   Median : 7015    Median :1265.0
+                Mean   : 4668   Mean   :11639   Mean   :18290   Mean   : 1525.2   Mean   : 8060    Mean   :1594.5
+                3rd Qu.: 5994   3rd Qu.:13692   3rd Qu.:22069   3rd Qu.: 1962.5   3rd Qu.: 9721    3rd Qu.:2089.0
+                Max.   :22039   Max.   :29892   Max.   :36486   Max.   :10155.0   Max.   :18594    Max.   :6372.0
+
+cluster cluster4 cluster3 cluster2
+1: 0    1: 0     1: 0     1: 0    
+2: 0    2: 0     2: 0     2: 0    
+3: 0    3: 0     3: 0     3: 0    
+4: 0    4: 0     4: 0     4: 0    
+5:79    5:79     5:79     5:79    
+------------------------------------------------------------------------------------------------------
+
+- Las principales características de cada grupo son:
+#### Grupo #1: 
+ - Segundo grupo más pequeño con 23 observaciones.
+ - Principalmente observaciones del canal Horeca y la región Otros.
+ - Muy alto gasto en productos frescos, el mas alto de todos los clusters.
+ - Muy alto gasto en productos congelados, el mas alto de todos los clusters.
+ - Muy bajo gasto en productos de baño, el mas bajo de todos los clusters.
+ - Bajo gasto en embutidos.
+ 
+#### Grupo #2:
+ - Segundo grupo más grande con 102 observaciones.
+ - Principalmente observaciones del canal Horeca y la región Otros.
+ - Muy alto gasto en productos frescos.
+ - Muy bajo gasto en productos de baño, el segundo mas bajo de todos los clusters.
+ - Bajo gasto en productos lacteos, el segundo mas bajo de todos los clusters.
+ - Bajo gasto en abarrotes y embutidos.
+ 
+
+#### Grupo #3:
+ - Grupo más pequeño con 10 observaciones.
+ - Principalmente observaciones del canal Retail y la región Otros.
+ - Muy alto gasto en productos frescos.
+ - Muy alto gasto en lacteos, el mas alto de todos los clusters.
+ - Muy alto gasto en abarrotes, el mas alto de todos los clusters
+ - Muy alto gasto en productos de baño, el mas alto de todos los clusters
+ - Muy alto gasto en embutidos, el mas alto de todos los clusters
+ - Alto gasto en productos congelados, el segundo mas alto de todos los clusters
+
+#### Grupo #4:
+ - Grupo más grande con 226 observaciones.
+ - Principalmente observaciones del canal Horeca y la región Otros.
+ - Bajo gasto en productos frescos.
+ - Bajo gasto en lacteos, el mas bajo de todos los clusters
+ - Bajo gasto de abarrotes, el mas bajo de todos los clusters
+ - Bajo gasto de productos congelados, el segundo mas bajo de todos los clusters
+ - Bajo gasto en embutidos, el mas bajo de todos los clusters
+  
+#### Grupo #5:
+ - Grupo de tamaño medio con 79 observaciones.
+ - Principalmente observaciones del canal Retail y la región Otros.
+ - Bajo gasto en productos frescos, el mas bajo de todos los clusters
+ - Muy alto gasto en lacteos, el segundo mas alto de todos los clusters
+ - Muy alto gasto en abarrotes, el segundo mas alto de todos los clusters
+ - Muy bajo consumo de productos congelados, el mas bajo de todos los clusters
+ - Muy bajo consumo de embutidos, el segundo mas bajo de todos los clusters
+ 
