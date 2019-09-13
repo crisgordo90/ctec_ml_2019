@@ -14,12 +14,13 @@ Librerias
 ```{r}
 library(caTools)
 library(rpart)
-library(rpart.plot)
 library(randomForest)
 library(dplyr)
 library(ggplot2)
 library(caret)
 library(class)
+library(e1071)
+library(ROCR)
 ```
 
 1. Desarolle el Analisis del Problema
@@ -39,7 +40,8 @@ http://datosabiertos.csv.go.cr/dashboards/19683/accidentes/
 ```{r}
 # na.strings = c("Desconocido"),
 data <- read.csv('data.csv', strip.white = T,
-                 colClasses = c("NULL", NA, NA, "NULL", NA,NA, NA, NA, NA, NA, NA, NA, "NULL", "NULL", "NULL"))
+                 colClasses = c("NULL", NA, NA, "NULL", NA,NA, NA, NA, NA, NA, NA, NA, "NULL", "NULL", "NULL"),
+                 )
 ```
 
 2. Desarolle el Entendimiento de los Datos
@@ -58,15 +60,17 @@ Provincia: Provincia.
 Canton: Canton.
 Distrito: Distrito.
 ```{r}
-names(data) <- c("rol", "atentido", "edad", "sexo", "anio", "mes", "dia", "provincia", "canton", "distrito")
-levels(data$atentido) <- c("si", "si", "no", "si")
+names(data) <- c("rol", "lesion", "edad", "sexo", "anio", "mes", "dia", "provincia", "canton", "distrito")
 
-data %>% mutate(variable = if_else(condición, valor_true, valor_false)) %>% mutate(variable = as.factor(as.characters(variable))))
+data <- data %>% 
+  mutate(atentido = if_else(lesion != "Ileso", "si", "no")) %>% 
+  mutate(atentido = as.factor(atentido))
 
 glimpse(data)
 summary(data)
 table(data$edad)
-anyNA(data)  # data <- na.omit(data)
+data <- na.omit(data)
+anyNA(data)
 ```
 
 3. Utilizando barplot cree un grafico de los atributos del dataset, observe las correlaciones entre atributos
@@ -88,47 +92,46 @@ data.train <- data[sample,]
 data.test <- data[!sample,]
 ```
 
-
-```{r}
-# Modelo de Regresion logistica
-set.seed(3333)
-knn_fit <- train(atentido ~ rol + sexo + edad, data = data.train, method = "knn", trControl = trainControl())
-
-
-
-
-
-
-# predicted.type <- knn(data.train[, c("rol", "edad", "sexo")], data.test[, c("rol", "edad", "sexo")],      data.train$atentido, k = 1)
-#error <- mean(predicted.type != test$Type)  #Error in prediction
-# confusionMatrix(predicted.type,test$Type) #Confusion Matrix
-```
 5. Evaluacion de los modelos
 ```{r}
+print("Modelo de K Vecinos Más Próximos")
+knn <- train(atentido ~ rol + sexo + edad, data = data.train[1:1000,], method = "knn", trControl = trainControl())
+knn.predict <- predict(knn, newdata = data.test)
+table(data.test$atentido, knn.predict)
+performance(prediction(c(knn.predict), c(data.test$atentido)), measure = "auc")@y.values
 
-
-# Modelo de Arbol de Decision
+print("Modelo de Arbol de Decision")
 tree <- rpart(atentido ~ rol + sexo + edad, data = data.train, method =  'class')
-rpart.plot(tree, shadow.col = "gray", main = "Hongos No Edibles")
 tree.predict <- predict(tree, newdata = data.test, type = 'class')
 table(data.test$atentido, tree.predict)
+performance(prediction(c(tree.predict), c(data.test$atentido)), measure = "auc")@y.values
 
 
-# Modelo de Bosque Aleatorio
+print("Modelo de Regresion Logistica")
+regression <- glm(atentido  ~ rol + sexo + edad, data = data.train, family = binomial)
+regression.predict <- predict(regression, newdata = data.test, type = 'response')
+table(data.test$atentido, regression.predict >= 0.8)
+performance(prediction(c(regression.predict), c(data.test$atentido)), measure = "auc")@y.values
+
+
+print("Modelo de Maquinas de Soporte Vectorial")
+svm <- svm(atentido ~ rol + sexo + edad, data = data.train[1:1000,], kernel = 'linear', cross = 2, scale = FALSE)
+svm.predict <- predict(svm, newdata = data.test)
+table(data.test$atentido, svm.predict) 
+performance(prediction(c(svm.predict), c(data.test$atentido)), measure = "auc")@y.values
+
+print("Modelo de Bosque Aleatorio")
 forest <- randomForest(atentido ~ rol + sexo + edad, data = data.train)
 forest.predict <- predict(forest, newdata = data.test, type = 'class')
 table(data.test$atentido, forest.predict)
-
-
-# Modelo de Regresion logistica
-regression <- glm(atentido  ~ rol + sexo + edad, data = data.train, family = binomial)
-regression.predict <- predict(regression, newdata = data.test, type = 'response')
-table(data.test$atentido, regression.predict >= 0.5)
-
+performance(prediction(c(forest.predict), c(data.test$atentido)), measure = "auc")@y.values
 ```
 
 
 6. Desarolle al menos 5 conclusiones sobre las clasificaciones de los modelos
 
-
-
+El Modelo de K Vecinos Más Próximos represeta hasta un 84% de los datos.
+El Modelo de Arbol de Decision represeta hasta un 86% de los datos.
+El Modelo de Regresion Logistica represeta hasta un 88% de los datos.
+El Modelo de Maquinas de Soporte Vectorial represeta hasta un 86% de los datos.
+El Modelo de Bosque Aleatorio represeta hasta un 86% de los datos.
