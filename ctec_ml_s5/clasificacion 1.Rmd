@@ -14,52 +14,135 @@ Librerias
 ```{r}
 library(caTools)
 library(rpart)
+library(rpart.plot)
+library(dplyr)
 library(randomForest)
+library(ggplot2)
+library(visdat)
 ```
 
-1. Desarolle el Análisis del Problema
-```{r}
-# Construya el análisis del problema
+1. Análisis del Problema
+
+Este conjunto de datos incluye descripciones de muestras hipotéticas correspondientes a 23 especies de hongos branquiales en el hongo de la familia Agaricus y Lepiota extraídas de la Guía de campo de la Sociedad Audubon de hongos de América del Norte (1981). 
+Cada especie clasificada en dos grupos las definitivamente comestibles o las de comestibilidad desconocida (no se recomiendan) junto con las definitivamente venenosas.
+La Guía establece claramente que no existe una regla simple para determinar la comestibilidad de un hongo; ninguna regla como "leaves of three, let it be" para el roble venenoso y la hiedra venenosa.
 
 
-# Este conjunto de datos incluye descripciones de muestras hipotéticas correspondientes a 23 especies de # hongos branquiales en el hongo de la familia Agaricus y Lepiota extraídas de la Guía de campo de la # # Sociedad Audubon de hongos de América del Norte (1981). Cada especie se identifica como definitivamente # comestible, definitivamente venenosa o de comestibilidad desconocida y no se recomienda. Esta última # # clase se combinó con la venenosa. La Guía establece claramente que no existe una regla simple para # # # determinar la comestibilidad de un hongo; ninguna regla como "folletos tres, que así sea" para el # roble venenoso y la hiedra.
 
-```
 Fuente del dataset:
 https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data
 
 1. Cargue el archivo agaricus_lepiota.data.csv en una variable
 
 ```{r}
-# Escriba su código aqui
+colnames <- c("class", "cap-shape", "cap-surface", "cap-color", "bruises", "odor", "gill-attachment", "gill-spacing", "gill-size", "gill-color", "stalk-shape", "stalk-root", "stalk-surface-above-ring", "stalk-surface-below-ring", "stalk-color-above-ring", "stalk-color-below-ring", "veil-type", "veil-color", "ring-number", "ring-type", "spore-print-color", "population", "habitat")
+data <- read.csv('agaricuslepiota.data', header = F, col.names =  colnames, strip.white = T)
 ```
 
 2. Desarolle el Entendimiento de los Datos
 
+Para analizar este problema, se tiene un conjunto de datos con 8124 observaciones y 22 variables nominales:
+1. cap-shape:                bell=b,conical=c,convex=x,flat=f,knobbed=k,sunken=s
+2. cap-surface:              fibrous=f,grooves=g,scaly=y,smooth=s
+3. cap-color:                brown=n,buff=b,cinnamon=c,gray=g,green=r, pink=p,purple=u,red=e,white=w,yellow=y
+4. bruises?:                 bruises=t,no=f
+5. odor:                     almond=a,anise=l,creosote=c,fishy=y,foul=f, musty=m,none=n,pungent=p,spicy=s
+6. gill-attachment:          attached=a,descending=d,free=f,notched=n
+7. gill-spacing:             close=c,crowded=w,distant=d
+8. gill-size:                broad=b,narrow=n
+9. gill-color:               black=k,brown=n,buff=b,chocolate=h,gray=g, green=r,orange=o,pink=p,purple=u,red=e, white=w,yellow=y
+10. stalk-shape:              enlarging=e,tapering=t
+11. stalk-root:               bulbous=b,club=c,cup=u,equal=e, rhizomorphs=z,rooted=r,missing=?
+12. stalk-surface-above-ring: fibrous=f,scaly=y,silky=k,smooth=s
+13. stalk-surface-below-ring: fibrous=f,scaly=y,silky=k,smooth=s
+14. stalk-color-above-ring:   brown=n,buff=b,cinnamon=c,gray=g,orange=o, pink=p,red=e,white=w,yellow=y
+15. stalk-color-below-ring:   brown=n,buff=b,cinnamon=c,gray=g,orange=o, pink=p,red=e,white=w,yellow=y
+16. veil-type:                partial=p,universal=u
+17. veil-color:               brown=n,orange=o,white=w,yellow=y
+18. ring-number:              none=n,one=o,two=t
+19. ring-type:                cobwebby=c,evanescent=e,flaring=f,large=l, none=n,pendant=p,sheathing=s,zone=z
+20. spore-print-color:        black=k,brown=n,buff=b,chocolate=h,green=r, orange=o,purple=u,white=w,yellow=y
+21. population:               abundant=a,clustered=c,numerous=n, scattered=s,several=v,solitary=y
+22. habitat:                  grasses=g,leaves=l,meadows=m,paths=p, urban=u,waste=w,woods=d
+
 ```{r}
-# Escriba su código aqui
+glimpse(data)
+vis_miss(data)
+summary(data)
+# Actualizar el ? para tener datos un poco mas claros
+levels(data$stalk.root) <- c("missing","bulbous","club","equal","rooted")
 ```
 
 3. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
 
 ```{r}
-# Escriba su código aqui
+ggplot(data, aes(x = cap.shape)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = cap.surface)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = cap.color)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = bruises)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = odor)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = gill.attachment)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = gill.spacing)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = gill.size)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = gill.color)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.shape)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.root)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.surface.above.ring)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.surface.below.ring)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.color.above.ring)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = stalk.color.below.ring)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = veil.type)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = veil.color)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = ring.number)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = ring.type)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = spore.print.color)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = population)) + geom_histogram(stat = "count") + facet_grid(c("class"))
+ggplot(data, aes(x = habitat)) + geom_histogram(stat = "count") + facet_grid(c("class"))
 ```
 
 
 4. Realice al menos 3 modelos vistos en clase
 ```{r}
-# Escriba su código aqui
+# Crear los sets de entrenamiento y prueba
+set.seed(23)
+sample <- sample.split(data$class, SplitRatio = 0.7)
+data.train <- data[sample,] 
+data.test <- data[!sample,]
+```
+
+```{r}
+# Modelo de arbol de decision
+tree <- rpart(class ~ ., data = data.train, method =  'class')
+# Modelo de bosque aleatorio
+forest <- randomForest(class ~ ., data = data.train)
+# Modelo de Regresion logistica
+regression <- glm(class ~ bruises + cap.color + odor + gill.spacing + gill.color + stalk.root + ring.type + spore.print.color, data = data.train, family = binomial)
 ```
 
 5. Evaluación del modelo
-```{r}
-# Escriba su código aqui
 
+```{r}
+# Modelo de Arbol de Decision
+rpart.plot(tree, shadow.col = "gray", main = "Hongos No Edibles")
+tree.predict <- predict(tree, newdata = data.test, type = 'class')
+table(data.test$class, tree.predict)
+
+
+# Modelo de Bosque Aleatorio
+forest.predict <- predict(forest, newdata = data.test, type = 'class')
+table(data.test$class, forest.predict)
+
+
+# Modelo de Regresion logistica
+regression.predict <- predict(regression, newdata = data.test, type = 'response')
+table(data.test$class, regression.predict >= 0.5)
 ```
 
 
-8. Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos
+6. Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos
 
+- El arbol de decision muestra que 1262 hongos se predijeron como edibles y lo eran, 1163 se predijeron como no edibles y no eran edibles, mientras que solo 12 se predijeron como edibles y no lo eran.
 
+- El bosque aleatorio muestra que 1262 hongos se predijeron como edibles y lo eran; y 1175 se predijeron como no edibles y no lo eran, vale la pena destacar que es muy raro que tenga 100% de precision.
 
+- El modelo de regresion logica muestra que 1262 hongos se predijeron como edibles y lo eran; y 1175 se predijeron como no edibles y no lo eran, vale la pena destacar que es muy raro que tenga 100% de precision.
